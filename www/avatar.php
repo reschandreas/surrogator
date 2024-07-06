@@ -13,6 +13,7 @@
  * @link     https://sourceforge.net/p/surrogator/
  */
 namespace surrogator;
+
 $cfgFile = __DIR__ . '/../data/surrogator.config.php';
 if (!file_exists($cfgFile)) {
     $cfgFile = '/etc/surrogator.config.php';
@@ -31,11 +32,11 @@ require $cfgFile;
  * Send an error message out.
  *
  * @param integer $statusCode HTTP status code
- * @param string  $msg        Error message
+ * @param string $msg Error message
  *
  * @return void
  */
-function err($statusCode, $msg, $more = '')
+function err(int $statusCode, string $msg, $more = '')
 {
     header('HTTP/1.0 ' . $statusCode . ' ' . $msg);
     header('Content-Type: text/plain');
@@ -49,10 +50,11 @@ if (count($uriParts) != 3 || $uriParts[1] != 'avatar') {
     err(400, 'URI is wrong, should be avatar/$hash');
 }
 $reqHash = $uriParts[2];
-if (strpos($reqHash, '?') !== false) {
+if (str_contains($reqHash, '?')) {
     $reqHash = substr($reqHash, 0, strpos($reqHash, '?'));
 }
-if (strlen($reqHash) !== 32 && strlen($reqHash) !== 64) {
+$length = strlen($reqHash);
+if ($length !== 32 && $length !== 64) {
     err(400, 'Hash has to be 32 or 64 characters long');
 }
 
@@ -70,7 +72,7 @@ if (isset($_GET['size'])) {
     $reqSize = intval($_GET['size']);
 }
 
-$default     = 'default.png';
+$default = 'default.png';
 $defaultMode = 'local';
 if (isset($_GET['d'])) {
     $_GET['default'] = $_GET['d'];
@@ -82,24 +84,24 @@ if (isset($_GET['default'])) {
         //special default mode, we support none of them except 404
         if ($_GET['default'] == '404') {
             $defaultMode = '404';
-            $default     = '404';
+            $default = '404';
         } else if ($_GET['default'] == 'mm') {
             //mystery man fallback image
             $defaultMode = 'local';
-            $default     = 'mm.png';
+            $default = 'mm.png';
         } else {
             //local default image
             $defaultMode = 'local';
-            $default     = 'default.png';
+            $default = 'default.png';
         }
     } else {
         //url
         $defaultMode = 'redirect';
-        $default     = $_GET['default'];
+        $default = $_GET['default'];
 
         $allowed = false;
         foreach ($trustedDefaultUrls ?? [] as $urlPrefix) {
-            if (substr($default, 0, strlen($urlPrefix))  == $urlPrefix) {
+            if (str_starts_with($default, $urlPrefix)) {
                 $allowed = true;
                 break;
             }
@@ -107,7 +109,7 @@ if (isset($_GET['default'])) {
         if (!$allowed) {
             header('X-Info: default parameter URL not allowed');
             $defaultMode = 'local';
-            $default     = 'default.png';
+            $default = 'default.png';
         }
     }
 }

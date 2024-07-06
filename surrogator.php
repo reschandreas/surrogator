@@ -57,7 +57,7 @@ foreach ($argv as $arg) {
  *
  * @return void
  */
-function showHelp()
+function showHelp(): void
 {
     echo <<<HLP
 Usage: php surrogator.php [options] [filename(s)]
@@ -140,14 +140,14 @@ if (count($files)) {
     );
 }
 foreach ($fileInfos as $fileInfo) {
-    $origPath   = $fileInfo->getPathname();
-    $fileName   = $fileInfo->getFilename();
-    $ext        = strtolower(substr($fileName, strrpos($fileName, '.') + 1));
+    $origPath = $fileInfo->getPathname();
+    $fileName = $fileInfo->getFilename();
+    $ext = strtolower(substr($fileName, strrpos($fileName, '.') + 1));
     $squarePath = $varDir . '/square/'
         . substr($fileName, 0, -strlen($ext)) . 'png';
 
     log('processing ' . $fileName, 1);
-    if (imageUptodate($origPath, $squarePath)) {
+    if (imageUpToDate($origPath, $squarePath)) {
         log(' image up to date', 2);
         continue;
     }
@@ -170,7 +170,7 @@ foreach ($fileInfos as $fileInfo) {
     $imgSquare = imagecreatefrompng($squarePath);
     foreach ($sizes as $size) {
         log(' size ' . $size, 3);
-        $sizePathMd5    = $varDir . '/' . $size . '/' . $md5 . '.png';
+        $sizePathMd5 = $varDir . '/' . $size . '/' . $md5 . '.png';
         $sizePathSha256 = $varDir . '/' . $size . '/' . $sha256 . '.png';
 
         $imgSize = imagecreatetruecolor($size, $size);
@@ -200,13 +200,13 @@ foreach ($fileInfos as $fileInfo) {
  *
  * @return array Array with 2 values: md5 and sha256 hash
  */
-function getHashes($fileName)
+function getHashes(string $fileName): array
 {
     //OpenIDs have their slashes "/" url-encoded
     $fileName = rawurldecode($fileName);
 
     $fileNameNoExt = pathinfo($fileName, PATHINFO_FILENAME);
-    $emailAddress  = trim(strtolower($fileNameNoExt));
+    $emailAddress = trim(strtolower($fileNameNoExt));
 
     return array(
         md5($emailAddress), hash('sha256', $emailAddress)
@@ -217,14 +217,14 @@ function getHashes($fileName)
  * Creates the square image from the given image in maximum size.
  * Scales the image up or down and makes the non-covered parts transparent.
  *
- * @param string  $origPath   Full path to original image
- * @param string  $ext        File extension ("jpg" or "png")
- * @param string  $targetPath Full path to target image file
- * @param integer $maxSize    Maxium image size the server supports
+ * @param string $origPath Full path to original image
+ * @param string $ext File extension ("jpg" or "png")
+ * @param string $targetPath Full path to target image file
+ * @param integer $maxSize Maximum image size the server supports
  *
  * @return boolean True if all went well, false if there was an error
  */
-function createSquare($origPath, $ext, $targetPath, $maxSize)
+function createSquare(string $origPath, string $ext, string $targetPath, int $maxSize): bool
 {
     if ($ext == 'png') {
         $imgOrig = imagecreatefrompng($origPath);
@@ -255,14 +255,14 @@ function createSquare($origPath, $ext, $targetPath, $maxSize)
     );
     imagealphablending($imgSquare, true);
 
-    $oWidth    = imagesx($imgOrig);
-    $oHeight   = imagesy($imgOrig);
+    $oWidth = imagesx($imgOrig);
+    $oHeight = imagesy($imgOrig);
     if ($oWidth > $oHeight) {
         $flScale = $maxSize / $oWidth;
     } else {
         $flScale = $maxSize / $oHeight;
     }
-    $nWidth  = (int)($oWidth * $flScale);
+    $nWidth = (int)($oWidth * $flScale);
     $nHeight = (int)($oHeight * $flScale);
 
     imagecopyresampled(
@@ -289,7 +289,7 @@ function createSquare($origPath, $ext, $targetPath, $maxSize)
  *
  * @return boolean True if target file is newer than the source file
  */
-function imageUptodate($sourcePath, $targetPath)
+function imageUpToDate(string $sourcePath, string $targetPath): bool
 {
     global $forceUpdate;
     if ($forceUpdate) {
@@ -309,12 +309,12 @@ function imageUptodate($sourcePath, $targetPath)
 /**
  * Write a log message to stdout
  *
- * @param string  $msg   Message to write
+ * @param string $msg Message to write
  * @param integer $level Log level - 1 is important, 3 is unimportant
  *
  * @return void
  */
-function log($msg, $level = 1)
+function log(string $msg, int $level = 1): void
 {
     global $logLevel;
     if ($level <= $logLevel) {
@@ -329,7 +329,7 @@ function log($msg, $level = 1)
  *
  * @return void
  */
-function logErr($msg)
+function logErr(string $msg): void
 {
     file_put_contents('php://stderr', $msg . "\n");
 }
