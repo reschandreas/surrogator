@@ -13,6 +13,8 @@
  * @link     https://sourceforge.net/p/surrogator/
  */
 namespace surrogator;
+use JetBrains\PhpStorm\NoReturn;
+
 $cfgFile = __DIR__ . '/../data/surrogator.config.php';
 if (!file_exists($cfgFile)) {
     $cfgFile = '/etc/surrogator.config.php';
@@ -22,7 +24,6 @@ if (!file_exists($cfgFile)) {
             "Configuration file does not exist.",
             "Copy data/surrogator.config.php.dist to data/surrogator.config.php"
         );
-        exit(2);
     }
 }
 require $cfgFile;
@@ -31,11 +32,11 @@ require $cfgFile;
  * Send an error message out.
  *
  * @param integer $statusCode HTTP status code
- * @param string  $msg        Error message
- *
+ * @param string $msg Error message
+ * @param string $more
  * @return void
  */
-function err($statusCode, $msg, $more = '')
+#[NoReturn] function err(int $statusCode, string $msg, $more = ''): void
 {
     header('HTTP/1.0 ' . $statusCode . ' ' . $msg);
     header('Content-Type: text/plain');
@@ -49,7 +50,7 @@ if (count($uriParts) != 3 || $uriParts[1] != 'avatar') {
     err(400, 'URI is wrong, should be avatar/$hash');
 }
 $reqHash = $uriParts[2];
-if (strpos($reqHash, '?') !== false) {
+if (str_contains($reqHash, '?')) {
     $reqHash = substr($reqHash, 0, strpos($reqHash, '?'));
 }
 if (strlen($reqHash) !== 32 && strlen($reqHash) !== 64) {
@@ -99,7 +100,7 @@ if (isset($_GET['default'])) {
 
         $allowed = false;
         foreach ($trustedDefaultUrls ?? [] as $urlPrefix) {
-            if (substr($default, 0, strlen($urlPrefix))  == $urlPrefix) {
+            if (str_starts_with($default, $urlPrefix)) {
                 $allowed = true;
                 break;
             }

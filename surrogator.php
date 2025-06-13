@@ -5,7 +5,6 @@
  *
  * Part of Surrogator - a simple libravatar avatar image server
  *
- * PHP version 5
  *
  * @category Tools
  * @package  Surrogator
@@ -14,6 +13,8 @@
  * @link     https://sourceforge.net/p/surrogator/
  */
 namespace surrogator;
+use ImagickException;
+
 $cfgFile = __DIR__ . '/data/surrogator.config.php';
 if (!file_exists($cfgFile)) {
     $cfgFile = '/etc/surrogator.config.php';
@@ -42,7 +43,7 @@ foreach ($argv as $arg) {
         showHelp();
         exit(4);
     } else if ($arg == '--version') {
-        echo "surrogator 0.0.1\n";
+        echo "surrogator 0.0.2\n";
         exit();
     } else if (file_exists($arg)) {
         $files[] = $arg;
@@ -147,7 +148,7 @@ foreach ($fileInfos as $fileInfo) {
         . substr($fileName, 0, -strlen($ext)) . 'png';
 
     log('processing ' . $fileName, 1);
-    if (imageUptodate($origPath, $squarePath)) {
+    if (imageUpToDate($origPath, $squarePath)) {
         log(' image up to date', 2);
         continue;
     }
@@ -200,7 +201,7 @@ foreach ($fileInfos as $fileInfo) {
  *
  * @return array Array with 2 values: md5 and sha256 hash
  */
-function getHashes($fileName)
+function getHashes(string $fileName): array
 {
     //OpenIDs have their slashes "/" url-encoded
     $fileName = rawurldecode($fileName);
@@ -217,14 +218,15 @@ function getHashes($fileName)
  * Creates the square image from the given image in maximum size.
  * Scales the image up or down and makes the non-covered parts transparent.
  *
- * @param string  $origPath   Full path to original image
- * @param string  $ext        File extension ("jpg" or "png")
- * @param string  $targetPath Full path to target image file
- * @param integer $maxSize    Maxium image size the server supports
+ * @param string $origPath Full path to original image
+ * @param string $ext File extension ("jpg" or "png")
+ * @param string $targetPath Full path to target image file
+ * @param integer $maxSize Maxium image size the server supports
  *
  * @return boolean True if all went well, false if there was an error
+ * @throws ImagickException
  */
-function createSquare($origPath, $ext, $targetPath, $maxSize)
+function createSquare(string $origPath, string $ext, string $targetPath, int $maxSize): bool
 {
     if ($ext == 'png') {
         $imgOrig = imagecreatefrompng($origPath);
@@ -247,31 +249,20 @@ function createSquare($origPath, $ext, $targetPath, $maxSize)
         return false;
     }
 
-    $imgSquare = imagecreatetruecolor($maxSize, $maxSize);
+    $renderedSize = min($maxSize, imagesx($imgOrig));
+
+    $imgSquare = imagecreatetruecolor($renderedSize, $renderedSize);
     imagealphablending($imgSquare, false);
     imagefilledrectangle(
-        $imgSquare, 0, 0, $maxSize - 1, $maxSize - 1,
+        $imgSquare, 0, 0, $renderedSize - 1, $renderedSize - 1,
         imagecolorallocatealpha($imgSquare, 0, 0, 0, 127)
     );
     imagealphablending($imgSquare, true);
 
-    $oWidth    = imagesx($imgOrig);
-    $oHeight   = imagesy($imgOrig);
-    if ($oWidth > $oHeight) {
-        $flScale = $maxSize / $oWidth;
-    } else {
-        $flScale = $maxSize / $oHeight;
-    }
-    $nWidth  = (int)($oWidth * $flScale);
-    $nHeight = (int)($oHeight * $flScale);
+    imagecopy($imgSquare, $imgOrig, 0, 0, 0, 0, $renderedSize, $renderedSize);
 
-    imagecopyresampled(
-        $imgSquare, $imgOrig,
-        ($maxSize - $nWidth) / 2, ($maxSize - $nHeight) / 2,
-        0, 0,
-        $nWidth, $nHeight,
-        $oWidth, $oHeight
-    );
+    echo "Resizing image to $maxSize x $maxSize\n";
+    $imgSquare = imagescale($imgSquare, $maxSize);
 
     imagesavealpha($imgSquare, true);
     imagepng($imgSquare, $targetPath);
@@ -287,9 +278,9 @@ function createSquare($origPath, $ext, $targetPath, $maxSize)
  * @param string $sourcePath Full source file path
  * @param string $targetPath Full target file path
  *
- * @return boolean True if target file is newer than the source file
+ * @return boolean True if the target file is newer than the source file
  */
-function imageUptodate($sourcePath, $targetPath)
+function imageUpToDate(string $sourcePath, string $targetPath): bool
 {
     global $forceUpdate;
     if ($forceUpdate) {
@@ -309,12 +300,12 @@ function imageUptodate($sourcePath, $targetPath)
 /**
  * Write a log message to stdout
  *
- * @param string  $msg   Message to write
+ * @param string $msg   Message to write
  * @param integer $level Log level - 1 is important, 3 is unimportant
  *
  * @return void
  */
-function log($msg, $level = 1)
+function log(string $msg, int $level = 1): void
 {
     global $logLevel;
     if ($level <= $logLevel) {
@@ -329,7 +320,7 @@ function log($msg, $level = 1)
  *
  * @return void
  */
-function logErr($msg)
+function logErr(string $msg): void
 {
     file_put_contents('php://stderr', $msg . "\n");
 }
